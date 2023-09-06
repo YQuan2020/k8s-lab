@@ -1,0 +1,55 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nodejs-demo
+  labels:
+    app: nodejs-demo
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nodejs-demo
+  template:
+    metadata:
+      labels:
+        app: nodejs-demo
+    spec:
+      containers:
+      - name: nodejs-demo
+        image: registry.ap-southeast-1.aliyuncs.com/harvest2025/nodejs:1693998654
+        ports:
+        - containerPort: 3000
+        env:
+        - name: PORT
+          value: "3000"
+        - name: DB_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: mongodb-secret
+              key: mongo-root-username
+        - name: DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: mongodb-secret
+              key: mongo-root-password
+        - name: DB_URL
+          valueFrom:
+            configMapKeyRef:
+              name: mongodb-configmap
+              key: database_url
+      imagePullSecrets:
+      - name: reg-secret
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: nodejs-service
+spec:
+  selector:
+    app: nodejs-demo
+  type: LoadBalancer
+  ports:
+    - protocol: TCP
+      port: 3000
+      targetPort: 3000
+      nodePort: 30001
