@@ -16,10 +16,12 @@ spec:
     spec:
       containers:
       - name: nodejs-demo
-        image: registry.ap-southeast-1.aliyuncs.com/harvest2025/nodejs:1693998654
+        image: registry.ap-southeast-1.aliyuncs.com/harvest2025/nodejs:latest
         ports:
         - containerPort: 3000
         env:
+        - name: VERSION
+          value: "1.8"
         - name: PORT
           value: "3000"
         - name: DB_USERNAME

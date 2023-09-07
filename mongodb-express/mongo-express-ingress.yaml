@@ -3,12 +3,16 @@ kind: Ingress
 metadata:
   name: mongodb-express-ingress
 spec:
+  tls:
+  - hosts:
+    - express.beyond2025.cloud
+    secretName: express.beyond2025.cloud
   rules:
-  - host: express.harvest2025.com
+  - host: express.beyond2025.cloud
     http:
       paths:
-      - path: /*
-        pathType: Prefix
+      - path: /
+        pathType: ImplementationSpecific
         backend:
           service:
             name: mongodb-express-service

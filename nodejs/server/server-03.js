@@ -1,24 +1,14 @@
 const express = require('express')
 const mongoose = require('mongoose')
+// const { emit } = require('process')
 const EventEmitter = require('events').EventEmitter
 const ev = new EventEmitter()
-const state = { isShutdown: false }
 
 const app = express()
 app.use(express.urlencoded({extended: true}))
 app.use(express.json())
-// const username = Buffer.from(process.env.DB_USERNAME).toString('base64')
-// const password = Buffer.from(process.env.DB_PASSWORD).toString('base64')
-const username = process.env.DB_USERNAME
-const password = process.env.DB_PASSWORD
-const DB = `mongodb://${process.env.DB_URL}:27017`
-console.log('db url: ', DB)
 
-mongoose.connect(DB, {
-    dbName: 'test',
-    user: username,
-    pass: password
-})
+mongoose.connect('mongodb://localhost:27017/test')
     .then((con) => console.log('MongoDB connected.'))
     .catch(err => console.log('MongoDB connection connect fail', err.message))
 
@@ -28,26 +18,19 @@ app.post('/user', async (req, res) => {
     try {
         const user = new User({ name: req.body.username })
         await user.save()
+        // server.close callback wait till setTimeout done
+        ev.emit('event 1')
         res.send('Success!').status(201)
     } catch (err) {
         res.send(err.message).status(500)
     }
 })
 
-app.get('/heath', async (req, res) => {
-    if (state.isShutdown) {
-        res.writeHead(500)
-        return res.end('not ok')
-    }
-    res.writeHead(200)
-    return res.end('ok')
-})
-
 ev.on('event 1', () => {
     setTimeout(() => {
         ev.emit('event 2')
         console.log('event 1 done.')
-    }, 5000);
+    }, 15000);
 })
 
 ev.on('event 2', () => {
@@ -58,8 +41,6 @@ ev.on('event 2', () => {
 const port = process.env.PORT || 3000
 const server = app.listen(port, () => console.log(`Api Server running on ${port} port, PID: ${process.pid}`))
 
-// server.close callback wait till setTimeout done
-ev.emit('event 1')
 /**
  * use cmd `pgrep node` to get the pid
  * kill -SIGTERM [pid]
@@ -67,8 +48,7 @@ ev.emit('event 1')
  * Termination signal: https://www.gnu.org/software/libc/manual/html_node/Termination-Signals.html?ref=hackernoon.com
  */
 process.on('SIGTERM', () => {
-    console.info(`[${new Date().toISOString()}] SIGTERM signal received.`)
-    state.isShutdown = true
+    console.info('SIGTERM signal received.')
     console.log('Closing http server.')
     server.close(() => {
         console.log('Http server closed.')

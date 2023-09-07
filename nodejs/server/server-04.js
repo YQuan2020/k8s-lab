@@ -1,24 +1,16 @@
 const express = require('express')
 const mongoose = require('mongoose')
+const promiseTimeout = require('./promiseTimeout')
 const EventEmitter = require('events').EventEmitter
 const ev = new EventEmitter()
 const state = { isShutdown: false }
+const TIMEOUT_IN_MILLIS = 900
 
 const app = express()
 app.use(express.urlencoded({extended: true}))
 app.use(express.json())
-// const username = Buffer.from(process.env.DB_USERNAME).toString('base64')
-// const password = Buffer.from(process.env.DB_PASSWORD).toString('base64')
-const username = process.env.DB_USERNAME
-const password = process.env.DB_PASSWORD
-const DB = `mongodb://${process.env.DB_URL}:27017`
-console.log('db url: ', DB)
 
-mongoose.connect(DB, {
-    dbName: 'test',
-    user: username,
-    pass: password
-})
+mongoose.connect('mongodb://localhost:27017/test')
     .then((con) => console.log('MongoDB connected.'))
     .catch(err => console.log('MongoDB connection connect fail', err.message))
 
@@ -67,7 +59,7 @@ ev.emit('event 1')
  * Termination signal: https://www.gnu.org/software/libc/manual/html_node/Termination-Signals.html?ref=hackernoon.com
  */
 process.on('SIGTERM', () => {
-    console.info(`[${new Date().toISOString()}] SIGTERM signal received.`)
+    console.info(`[${Date.now()}] SIGTERM signal received.`)
     state.isShutdown = true
     console.log('Closing http server.')
     server.close(() => {

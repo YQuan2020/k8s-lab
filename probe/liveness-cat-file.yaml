@@ -1,0 +1,21 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: liveness-exec
+  labels:
+      app: liveness
+spec:
+  containers:
+    - name: liveness
+      image: busybox
+      args: #创建测试探针探测的文件
+        - /bin/sh
+        - -c
+        - touch /tmp/healthy; sleep 30; rm -rf /tmp/healthy; sleep 600
+      livenessProbe:
+        initialDelaySeconds: 10 #延迟检测时间
+        periodSeconds: 5 #检测时间间隔
+        exec: #使用命令检查
+          command: #指令，类似于运行命令sh
+            - cat #sh 后的第一个内容，直到需要输入空格，变成下一行
+            - /tmp/healthy #由于不能输入空格，需要另外声明，结果为sh cat"空格"/tmp/healthy
