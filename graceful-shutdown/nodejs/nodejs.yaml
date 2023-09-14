@@ -21,7 +21,7 @@ spec:
         - containerPort: 3000
         env:
         - name: VERSION
-          value: "1.8"
+          value: "1.96"
         - name: PORT
           value: "3000"
         - name: DB_USERNAME
@@ -39,6 +39,11 @@ spec:
             configMapKeyRef:
               name: mongodb-configmap
               key: database_url
+        - name: DB_PORT
+          valueFrom:
+            configMapKeyRef:
+              name: mongodb-configmap
+              key: port
       imagePullSecrets:
       - name: reg-secret
 ---
@@ -49,7 +54,7 @@ metadata:
 spec:
   selector:
     app: nodejs-demo
-  type: LoadBalancer
+  type: NodePort
   ports:
     - protocol: TCP
       port: 3000

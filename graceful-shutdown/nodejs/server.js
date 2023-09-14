@@ -7,18 +7,16 @@ const state = { isShutdown: false }
 const app = express()
 app.use(express.urlencoded({extended: true}))
 app.use(express.json())
-// const username = Buffer.from(process.env.DB_USERNAME).toString('base64')
-// const password = Buffer.from(process.env.DB_PASSWORD).toString('base64')
-const username = process.env.DB_USERNAME
-const password = process.env.DB_PASSWORD
-const DB = `mongodb://${process.env.DB_URL}:27017`
-console.log('db url: ', DB)
+const dbUrl = process.env.DB_URL || localhost
+const dbPort = process.env.DB_PORT || 27017
+const DB = `mongodb://${dbUrl}:${dbPort}`
+const options = {
+    dbName: 'test'
+}
+if (process.env.DB_USERNAME) options.user = process.env.DB_USERNAME
+if (process.env.DB_PASSWORD) options.pass = process.env.DB_PASSWORD
 
-mongoose.connect(DB, {
-    dbName: 'test',
-    user: username,
-    pass: password
-})
+mongoose.connect(DB, options)
     .then((con) => console.log('MongoDB connected.'))
     .catch(err => console.log('MongoDB connection connect fail', err.message))
 
@@ -55,7 +53,7 @@ ev.on('event 2', () => {
         console.log('event 2 done.')
     }, 5000);
 })
-const port = process.env.PORT || 3000
+const port = process.env.PORT
 const server = app.listen(port, () => console.log(`Api Server running on ${port} port, PID: ${process.pid}`))
 
 // server.close callback wait till setTimeout done
@@ -69,21 +67,21 @@ ev.emit('event 1')
 process.on('SIGTERM', () => {
     console.info(`[${new Date().toISOString()}] SIGTERM signal received.`)
     state.isShutdown = true
-    console.log('Closing http server.')
+    console.log(`[${new Date().toISOString()}] Closing http server.`)
     server.close(() => {
-        console.log('Http server closed.')
+        console.log(`[${new Date().toISOString()}] Http server closed.`)
         // boolean means [force], ser in mongoose doc
         mongoose.connection.close(false)
         .then((con) => {
-            console.log('MongoDB connection closed.')
+            console.log(`[${new Date().toISOString()}] MongoDB connection closed.`)
             // process will close automatically cause event loop is empty, and nothing 
             // process.exit()
             // console.log('process.exit(0). called')
         })
-        .catch(err => console.log('MongoDB connection closed fail', err.message))
+        .catch(err => console.log(`[${new Date().toISOString()}] MongoDB connection closed fail.`, err.message))
     })
 })
 
 process.on('exit', (code) => {
-    console.log('This will not run', code);
-});
+    console.log(`[${new Date().toISOString()}] This will not run, exit code: ${code}`)
+})
