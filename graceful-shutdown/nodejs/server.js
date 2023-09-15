@@ -15,7 +15,7 @@ const options = {
 }
 if (process.env.DB_USERNAME) options.user = process.env.DB_USERNAME
 if (process.env.DB_PASSWORD) options.pass = process.env.DB_PASSWORD
-
+console.log('----------db info: ', DB, options)
 mongoose.connect(DB, options)
     .then((con) => console.log('MongoDB connected.'))
     .catch(err => console.log('MongoDB connection connect fail', err.message))
@@ -32,7 +32,7 @@ app.post('/user', async (req, res) => {
     }
 })
 
-app.get('/heath', async (req, res) => {
+app.get('/health', async (req, res) => {
     if (state.isShutdown) {
         res.writeHead(500)
         return res.end('not ok')

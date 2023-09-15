@@ -21,7 +21,7 @@ spec:
         - containerPort: 3000
         env:
         - name: VERSION
-          value: "1.96"
+          value: "1.27"
         - name: PORT
           value: "3000"
         - name: DB_USERNAME
