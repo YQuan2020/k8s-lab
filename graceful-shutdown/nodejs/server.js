@@ -1,3 +1,6 @@
+const os = require('os')
+const eth0 = os.networkInterfaces()['eth0']
+const ip = eth0 ? eth0[0]['address'] : ''
 const express = require('express')
 const mongoose = require('mongoose')
 const EventEmitter = require('events').EventEmitter
@@ -7,7 +10,7 @@ const state = { isShutdown: false }
 const app = express()
 app.use(express.urlencoded({extended: true}))
 app.use(express.json())
-const dbUrl = process.env.DB_URL || localhost
+const dbUrl = process.env.DB_URL || 'localhost'
 const dbPort = process.env.DB_PORT || 27017
 const DB = `mongodb://${dbUrl}:${dbPort}`
 const options = {
@@ -15,18 +18,29 @@ const options = {
 }
 if (process.env.DB_USERNAME) options.user = process.env.DB_USERNAME
 if (process.env.DB_PASSWORD) options.pass = process.env.DB_PASSWORD
-console.log('----------db info: ', DB, options)
 mongoose.connect(DB, options)
     .then((con) => console.log('MongoDB connected.'))
     .catch(err => console.log('MongoDB connection connect fail', err.message))
 
 const User = mongoose.model('User', {name: String})
 
+app.use((req, res, next) => {
+    const start = new Date()
+    console.log(`[->][${ip}][${start.toISOString()}][${req.method}][${req.originalUrl}]`)
+    res.on('finish', () => {
+        const end = new Date()
+        const cost = (end.getTime() - start.getTime()) / 1000
+        console.log(`[<-][${ip}][${end.toISOString()}][${req.method}][${req.originalUrl}][${cost}]`)
+    })
+    next()
+})
+
 app.post('/user', async (req, res) => {
     try {
         const user = new User({ name: req.body.username })
+        await new Promise((resolve, reject) => setTimeout(() => {resolve()}, 20000))
         await user.save()
-        res.send('Success!').status(201)
+        res.send(`From [${ip}] Success!`).status(201)
     } catch (err) {
         res.send(err.message).status(500)
     }
@@ -38,7 +52,7 @@ app.get('/health', async (req, res) => {
         return res.end('not ok')
     }
     res.writeHead(200)
-    return res.end('ok')
+    return res.end(`From [${ip}] Success!`)
 })
 
 ev.on('event 1', () => {
@@ -53,7 +67,7 @@ ev.on('event 2', () => {
         console.log('event 2 done.')
     }, 5000);
 })
-const port = process.env.PORT
+const port = process.env.PORT || 3000
 const server = app.listen(port, () => console.log(`Api Server running on ${port} port, PID: ${process.pid}`))
 
 // server.close callback wait till setTimeout done
@@ -83,5 +97,6 @@ process.on('SIGTERM', () => {
 })
 
 process.on('exit', (code) => {
+    // why k8s terminated container after node process exit, health check?
     console.log(`[${new Date().toISOString()}] This will not run, exit code: ${code}`)
 })
